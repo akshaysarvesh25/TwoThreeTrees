@@ -2,10 +2,15 @@
 #include <math.h>
 #include <string.h>
 #include<tuple>
+#include <algorithm>
+#include <vector>
+
 
 using namespace std;
 
 #define DEBUG_MODE_ON_PROCESSROOT 1
+#define DEBUG_MODE_ON_ADDLEAF 1
+#define DEBUG_MODE_ON_INSERT 1
 
 
 template <class T>
@@ -43,9 +48,14 @@ class TwoThree_Tree {
     private:
     TwoThreeTree_Node<T> *root;
 
-    void CheckAndProcessRoot(T val1)
+     /***************************************************************
+     *
+     *
+     ***************************************************************/
+    bool CheckAndProcessRoot(T val1)
     {
-      if(root->LData && !root->MData && !root->RData) //If the root contains only left element
+      /* If the root contains only left element */
+      if(root->LData && !root->MData && !root->RData)
       {
         if(root->LData <= val1)
         {
@@ -53,6 +63,7 @@ class TwoThree_Tree {
           #if DEBUG_MODE_ON_PROCESSROOT
           cout<<"Adding MData"<<endl;
           #endif
+          return true;
         }
         else
         {
@@ -61,6 +72,7 @@ class TwoThree_Tree {
           #if DEBUG_MODE_ON_PROCESSROOT
           cout<<"Replacing LData"<<endl;
           #endif
+          return true;
         }
       }
 
@@ -76,6 +88,7 @@ class TwoThree_Tree {
           #if DEBUG_MODE_ON_PROCESSROOT
           cout<<"If both left and middle elements are large, adding right element"<<endl;
           #endif
+          return true;
         }
         /* If the middle element is larger than the right element */
         else if((root->LData <= val1) &&(root->MData > val1))
@@ -85,6 +98,7 @@ class TwoThree_Tree {
           #if DEBUG_MODE_ON_PROCESSROOT
           cout<<"If middle element is large, adding right element"<<endl;
           #endif
+          return true;
         }
         else
         {
@@ -92,8 +106,112 @@ class TwoThree_Tree {
           #if DEBUG_MODE_ON_PROCESSROOT
           cout<<"Adding Right element"<<endl;
           #endif
+          return true;
         }
       }
+
+      else
+      {
+        return false;
+      }
+    }
+
+    /***************************************************************
+     *
+     *
+     ***************************************************************/
+    std::vector<T> Order4InstancesData(T val1, T val2, T val3,T val4)
+    {
+      vector<T> vec;
+
+      vec.push_back(val1);
+      vec.push_back(val2);
+      vec.push_back(val3);
+      vec.push_back(val4);
+
+      sort( vec.begin(), vec.end() );
+
+      return vec;
+    }
+
+    /***************************************************************
+     *
+     *
+     ***************************************************************/
+    void AddLeaf(TwoThreeTree_Node<T> *r1, T val1,TwoThreeTree_Node<T> *r2)
+    {
+
+      #if DEBUG_MODE_ON_ADDLEAF
+      cout<<"Starting AddLeaf"<<endl;
+      #endif
+
+      r2 = NULL;
+
+      /* If r1 is a parent of leaves */
+      if((r1->LChild->LChild == NULL) && (r1->MChild->LChild == NULL) && (r1->RChild->LChild == NULL))
+      {
+        /* If r1 has only two children i.e only Left and Right children exist */
+        if((r1->LChild)&&(r1->MChild)&&!(r1->RChild))
+        {
+          r1->RChild = new TwoThreeTree_Node<T>(val1);
+        }
+
+        else
+        {
+            std::vector<T> SortedData = Order4InstancesData(val1,r1->LData,r1->MData,r1->RData);
+
+            r1->LData = SortedData[0];
+            r1->MData = SortedData[1];
+            r2->LData = SortedData[2];
+            r2->MData = SortedData[3];
+
+        }
+        return;
+      }
+
+      TwoThreeTree_Node<T> *v,*v2=NULL;
+
+      if((r1->LData)>=val1)
+      {
+
+        v = r1->LChild;
+      }
+
+      else if((r1->MData>=val1) || !(r1->RChild) )
+      {
+        v = r1->MChild;
+      }
+
+      else
+      {
+        v = r1->RChild;
+      }
+
+      AddLeaf(v,val1,v2);
+
+      if(v2 == NULL)
+      {
+        return;
+      }
+
+      if((v2!=NULL)&&(r1->LChild)&&(r1->MChild))
+      {
+        r1->RChild = v2;
+      }
+      else
+      {
+        std::vector<T> SortedData1 = Order4InstancesData(v2->LData,r1->LData,r1->MData,r1->RData);
+
+        r1->LData = SortedData1[0];
+        r1->MData = SortedData1[1];
+        r2->LData = SortedData1[2];
+        r2->MData = SortedData1[3];
+
+        return;
+      }
+
+
+      //return *r_;
     }
 
 
@@ -112,14 +230,27 @@ class TwoThree_Tree {
         }
 
 
-      void Insert(T val1)//,T valR, T valM) {
+      void Insert(T val1)
       {
          /* If root exists */
          if (root)
          {
              /* Check if Root exists */
-             CheckAndProcessRoot(val1);
+             bool bRetVal = CheckAndProcessRoot(val1);
+             #if DEBUG_MODE_ON_INSERT
+             cout<<"bRetVal is : "<<bRetVal<<endl;
+             #endif
 
+             if(bRetVal == true)
+             {
+               return;
+             }
+
+             /* Dummy Node variable */
+             TwoThreeTree_Node<T> *r1;
+
+             /* Add elements to the tree */
+             AddLeaf(root,val1,r1);
 
 
 
@@ -143,6 +274,7 @@ int main() {
     TwoThree_Tree1->CreateTree(11);
     TwoThree_Tree1->Insert(10);
     TwoThree_Tree1->Insert(9);
+    TwoThree_Tree1->Insert(96);
 
     return 0;
   }
